@@ -30,7 +30,9 @@ RUN apt-get install -y unixodbc-dev
 RUN pear config-set php_ini /etc/php/8.0/fpm/php.ini
 RUN printf "\n" | pecl install sqlsrv
 RUN printf "\n" | pecl install pdo_sqlsrv
-RUN phpenmod sqlsrv pdo_sqlsrv
+RUN printf "; priority=20\nextension=sqlsrv.so\n" > /etc/php/8.0/mods-available/sqlsrv.ini
+RUN printf "; priority=30\nextension=pdo_sqlsrv.so\n" > /etc/php/8.0/mods-available/pdo_sqlsrv.ini
+RUN phpenmod -v 8.0 sqlsrv pdo_sqlsrv
 
 
 RUN sed -i "s/;date.timezone =.*/date.timezone = UTC/" /etc/php/8.0/cli/php.ini
