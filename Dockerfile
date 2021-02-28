@@ -28,8 +28,8 @@ RUN apt-get install -y unixodbc-dev
 
 
 RUN pear config-set php_ini `php --ini | grep "Loaded Configuration" | sed -e "s|.*:\s*||"` system
-RUN printf "\n" | pecl install sqlsrv
-RUN printf "\n" | pecl install pdo_sqlsrv
+RUN printf "\n" | pecl -d php_suffix=8.0 install install sqlsrv
+RUN printf "\n" | pecl -d php_suffix=8.0 install pdo_sqlsrv
 RUN echo "extension=sqlsrv.so" | tee --append /etc/php/8.0/fpm/php.ini
 RUN echo "extension=pdo_sqlsrv.so" | tee --append /etc/php/8.0/fpm/php.ini
 
