@@ -1,4 +1,4 @@
-FROM ubuntu:20.04
+FROM ubuntu:18.04
 MAINTAINER  samuel@nearintegration.com
 ENV DEBIAN_FRONTEND noninteractive
 
@@ -16,7 +16,7 @@ RUN apt-get install -y nano apt-transport-https php7.4-bcmath php7.4-bz2 php7.4-
                 php-tideways php-mongodb php7.4 mcrypt php-pear
 
 RUN curl https://packages.microsoft.com/keys/microsoft.asc | apt-key add -
-RUN curl https://packages.microsoft.com/config/ubuntu/20.04/prod.list > /etc/apt/sources.list.d/mssql-release.list
+RUN curl https://packages.microsoft.com/config/ubuntu/18.04/prod.list > /etc/apt/sources.list.d/mssql-release.list
 RUN apt-get update  -y
 RUN apt-get upgrade  -y
 RUN ACCEPT_EULA=Y apt-get install -y msodbcsql17
