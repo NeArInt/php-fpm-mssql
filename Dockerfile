@@ -31,7 +31,7 @@ RUN pear config-set php_ini `php --ini | grep "Loaded Configuration" | sed -e "s
 RUN printf "\n" | pecl -d php_suffix=8.0 install install sqlsrv
 RUN printf "\n" | pecl -d php_suffix=8.0 install pdo_sqlsrv
 RUN echo "extension=sqlsrv.so" | tee --append /etc/php/8.0/fpm/php.ini
-RUN echo "extension=php_pdo_sqlsrv.so" | tee --append /etc/php/8.0/fpm/php.ini
+RUN echo "extension=pdo_sqlsrv.so" | tee --append /etc/php/8.0/fpm/php.ini
 
 
 RUN sed -i "s/;date.timezone =.*/date.timezone = UTC/" /etc/php/8.0/cli/php.ini
