@@ -13,7 +13,7 @@ RUN apt-get install -y nano apt-transport-https php8.0-bcmath php8.0-bz2 php8.0-
                 php8.0-odbc php8.0-opcache php8.0-pgsql php8.0-phpdbg php8.0-pspell \
                 php8.0-readline php8.0-soap php8.0-sqlite3 \
                 php8.0-tidy php8.0-xml php8.0-xmlrpc php8.0-xsl php8.0-zip \
-                php-tideways php-mongodb php8.0 mcrypt php-pear
+                php-tideways php8.0-mongodb php8.0 mcrypt php-pear
 
 RUN curl https://packages.microsoft.com/keys/microsoft.asc | apt-key add -
 RUN curl https://packages.microsoft.com/config/ubuntu/20.04/prod.list > /etc/apt/sources.list.d/mssql-release.list
@@ -36,7 +36,7 @@ RUN echo "extension=pdo_sqlsrv.so" | tee --append /etc/php/8.0/fpm/php.ini
 
 RUN sed -i "s/;date.timezone =.*/date.timezone = UTC/" /etc/php/8.0/cli/php.ini
 RUN sed -i "s/;date.timezone =.*/date.timezone = UTC/" /etc/php/8.0/fpm/php.ini
-RUN sed -i "s/memory_limit =.*/memory_limit = 256M/" /etc/php/8.0/fpm/php.ini
+RUN sed -i "s/memory_limit =.*/memory_limit = 1024M/" /etc/php/8.0/fpm/php.ini
 RUN sed -i "s/display_errors = Off/display_errors = Off/" /etc/php/8.0/fpm/php.ini
 RUN sed -i "s/upload_max_filesize = .*/upload_max_filesize = 100M/" /etc/php/8.0/fpm/php.ini
 RUN sed -i "s/post_max_size = .*/post_max_size = 100M/" /etc/php/8.0/fpm/php.ini
