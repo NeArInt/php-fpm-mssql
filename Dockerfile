@@ -13,7 +13,7 @@ RUN apt-get install -y nano apt-transport-https php8.0-bcmath php8.0-bz2 php8.0-
                 php8.0-odbc php8.0-opcache php8.0-pgsql php8.0-phpdbg php8.0-pspell \
                 php8.0-readline php8.0-soap php8.0-sqlite3 \
                 php8.0-tidy php8.0-xml php8.0-xmlrpc php8.0-xsl php8.0-zip \
-                php-tideways php8.0-mongodb php8.0 mcrypt php-pear
+                php8.0-tideways php8.0-mongodb php8.0 mcrypt php8.0-pear
 
 RUN curl https://packages.microsoft.com/keys/microsoft.asc | apt-key add -
 RUN curl https://packages.microsoft.com/config/ubuntu/20.04/prod.list > /etc/apt/sources.list.d/mssql-release.list
