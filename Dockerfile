@@ -15,8 +15,8 @@ RUN apt-get install -y nano apt-transport-https php8.4-bcmath php8.4-bz2 php8.4-
                 php8.4-tidy php8.4-xml php8.4-xmlrpc php8.4-xsl php8.4-zip \
                 php8.4-mongodb php8.4 mcrypt php-pear
 
-RUN curl https://packages.microsoft.com/keys/microsoft.asc | gpg --dearmor | tee /etc/apt/trusted.gpg.d/microsoft.gpg > /dev/null
-RUN curl https://packages.microsoft.com/config/ubuntu/24.04/prod.list > /etc/apt/sources.list.d/mssql-release.list
+RUN curl -fsSL https://packages.microsoft.com/keys/microsoft.asc | gpg --dearmor -o /usr/share/keyrings/microsoft-prod.gpg
+RUN curl -fsSL https://packages.microsoft.com/config/ubuntu/24.04/prod.list | tee /etc/apt/sources.list.d/mssql-release.list > /dev/null
 RUN apt-get update -y
 RUN apt-get upgrade -y
 RUN ACCEPT_EULA=Y apt-get install -y msodbcsql18
