@@ -10,6 +10,10 @@ RUN LC_ALL=en_US.UTF-8 add-apt-repository ppa:ondrej/php
 # invalidates the Docker layer cache below, forcing a fresh apt-get update so the
 # PPA's newest 8.4.x packages are pulled instead of a stale cached package list.
 ARG PHP_MIN_VERSION=8.4.27
+# Optional cache-buster. Pass a value that changes every build (e.g. in Buddy:
+#   Build Arguments -> CACHE_BUST=$BUDDY_RUN_ID) to force a fresh apt-get update
+# even when nothing in this Dockerfile changed. Leave unset for normal cached builds.
+ARG CACHE_BUST=
 
 RUN apt-get update -y && apt-get upgrade -y \
   && apt-get install -y nano apt-transport-https php8.4-bcmath php8.4-bz2 php8.4-cli php8.4-common php8.4-curl \
