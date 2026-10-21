@@ -1,19 +1,29 @@
 FROM ubuntu:24.04
-MAINTAINER samuel@nearintegration.com
-ENV DEBIAN_FRONTEND noninteractive
+LABEL org.opencontainers.image.authors="samuel@nearintegration.com"
+ENV DEBIAN_FRONTEND=noninteractive
 
 RUN apt-get clean && apt-get -y update && apt-get install -y locales wget curl software-properties-common gnupg2 git \
   && locale-gen en_US.UTF-8
 RUN LC_ALL=en_US.UTF-8 add-apt-repository ppa:ondrej/php
-RUN apt-get update -y
-RUN apt-get upgrade -y
-RUN apt-get install -y nano apt-transport-https php8.4-bcmath php8.4-bz2 php8.4-cli php8.4-common php8.4-curl \
+# Minimum PHP version required. 8.4.27 (2026-10-21) fixes the unauthenticated RCE
+# vulnerabilities CVE-2026-109618 and CVE-2026-109619. Bumping this ARG also
+# invalidates the Docker layer cache below, forcing a fresh apt-get update so the
+# PPA's newest 8.4.x packages are pulled instead of a stale cached package list.
+ARG PHP_MIN_VERSION=8.4.27
+
+RUN apt-get update -y && apt-get upgrade -y \
+  && apt-get install -y nano apt-transport-https php8.4-bcmath php8.4-bz2 php8.4-cli php8.4-common php8.4-curl \
                 php8.4-cgi php8.4-dev php8.4-fpm php8.4-gd php8.4-gmp php8.4-imap php8.4-intl \
                 php8.4-ldap php8.4-mbstring php8.4-mysql \
                 php8.4-odbc php8.4-opcache php8.4-pgsql php8.4-phpdbg php8.4-pspell \
                 php8.4-readline php8.4-soap php8.4-sqlite3 \
                 php8.4-tidy php8.4-xml php8.4-xmlrpc php8.4-xsl php8.4-zip \
                 php8.4-mongodb php8.4 mcrypt php-pear
+
+# Fail the build if the installed PHP is older than PHP_MIN_VERSION (i.e. still vulnerable).
+RUN php -r 'exit(version_compare(PHP_VERSION, getenv("PHP_MIN_VERSION"), ">=") ? 0 : 1);' \
+  || { echo "ERROR: installed PHP $(php -r 'echo PHP_VERSION;') is older than required ${PHP_MIN_VERSION}"; exit 1; }
+RUN php -v
 
 RUN curl -fsSL https://packages.microsoft.com/keys/microsoft.asc | gpg --dearmor -o /usr/share/keyrings/microsoft-prod.gpg
 RUN curl -fsSL https://packages.microsoft.com/config/ubuntu/24.04/prod.list | tee /etc/apt/sources.list.d/mssql-release.list > /dev/null
