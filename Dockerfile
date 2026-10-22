@@ -1,19 +1,33 @@
 FROM ubuntu:24.04
-MAINTAINER samuel@nearintegration.com
-ENV DEBIAN_FRONTEND noninteractive
+LABEL org.opencontainers.image.authors="samuel@nearintegration.com"
+ENV DEBIAN_FRONTEND=noninteractive
 
 RUN apt-get clean && apt-get -y update && apt-get install -y locales wget curl software-properties-common gnupg2 git \
   && locale-gen en_US.UTF-8
 RUN LC_ALL=en_US.UTF-8 add-apt-repository ppa:ondrej/php
-RUN apt-get update -y
-RUN apt-get upgrade -y
-RUN apt-get install -y nano apt-transport-https php8.4-bcmath php8.4-bz2 php8.4-cli php8.4-common php8.4-curl \
+# Minimum PHP version required. 8.4.27 (2026-10-21) fixes the unauthenticated RCE
+# vulnerabilities CVE-2026-109618 and CVE-2026-109619. Bumping this ARG also
+# invalidates the Docker layer cache below, forcing a fresh apt-get update so the
+# PPA's newest 8.4.x packages are pulled instead of a stale cached package list.
+ARG PHP_MIN_VERSION=8.4.27
+# Optional cache-buster. Pass a value that changes every build (e.g. in Buddy:
+#   Build Arguments -> CACHE_BUST=$BUDDY_RUN_ID) to force a fresh apt-get update
+# even when nothing in this Dockerfile changed. Leave unset for normal cached builds.
+ARG CACHE_BUST=
+
+RUN apt-get update -y && apt-get upgrade -y \
+  && apt-get install -y nano apt-transport-https php8.4-bcmath php8.4-bz2 php8.4-cli php8.4-common php8.4-curl \
                 php8.4-cgi php8.4-dev php8.4-fpm php8.4-gd php8.4-gmp php8.4-imap php8.4-intl \
                 php8.4-ldap php8.4-mbstring php8.4-mysql \
                 php8.4-odbc php8.4-opcache php8.4-pgsql php8.4-phpdbg php8.4-pspell \
                 php8.4-readline php8.4-soap php8.4-sqlite3 \
                 php8.4-tidy php8.4-xml php8.4-xmlrpc php8.4-xsl php8.4-zip \
-                php8.4-mongodb php8.4 mcrypt php-pear
+                php8.4-mongodb php8.4 mcrypt unzip
+
+# Fail the build if the installed PHP is older than PHP_MIN_VERSION (i.e. still vulnerable).
+RUN php -r 'exit(version_compare(PHP_VERSION, getenv("PHP_MIN_VERSION"), ">=") ? 0 : 1);' \
+  || { echo "ERROR: installed PHP $(php -r 'echo PHP_VERSION;') is older than required ${PHP_MIN_VERSION}"; exit 1; }
+RUN php -v
 
 RUN curl -fsSL https://packages.microsoft.com/keys/microsoft.asc | gpg --dearmor -o /usr/share/keyrings/microsoft-prod.gpg
 RUN curl -fsSL https://packages.microsoft.com/config/ubuntu/24.04/prod.list | tee /etc/apt/sources.list.d/mssql-release.list > /dev/null
@@ -26,12 +40,24 @@ RUN echo 'export PATH="$PATH:/opt/mssql-tools18/bin"' >> ~/.bashrc
 RUN /bin/bash -c "source ~/.bashrc"
 RUN apt-get install -y unixodbc-dev
 
-RUN pear config-set php_ini /etc/php/8.4/fpm/php.ini
-RUN printf "\n" | pecl install sqlsrv
-RUN printf "\n" | pecl install pdo_sqlsrv
+# Microsoft SQL Server drivers via PIE (PHP Installer for Extensions), the official
+# replacement for the now-deprecated PECL. Sources come from Packagist/GitHub instead of
+# pecl.php.net. --skip-enable-extension: we enable them the Debian way below (mods-available
+# + phpenmod) so CLI and FPM both get them without duplicate ini entries.
+ARG SQLSRV_VERSION=5.13.3
+RUN curl -fsSL --retry 8 --retry-delay 10 --retry-all-errors \
+      -o /usr/local/bin/pie https://github.com/php/pie/releases/latest/download/pie.phar \
+  && chmod +x /usr/local/bin/pie \
+  && pie --version \
+  && pie check-build-tools \
+  && pie install --no-interaction --no-cache --skip-enable-extension "microsoft/sqlsrv:${SQLSRV_VERSION}" \
+  && pie install --no-interaction --no-cache --skip-enable-extension "microsoft/pdo_sqlsrv:${SQLSRV_VERSION}" \
+  && test -f "$(php-config --extension-dir)/sqlsrv.so" \
+  && test -f "$(php-config --extension-dir)/pdo_sqlsrv.so"
 RUN printf "; priority=20\nextension=sqlsrv.so\n" > /etc/php/8.4/mods-available/sqlsrv.ini
 RUN printf "; priority=30\nextension=pdo_sqlsrv.so\n" > /etc/php/8.4/mods-available/pdo_sqlsrv.ini
 RUN phpenmod -v 8.4 sqlsrv pdo_sqlsrv
+RUN php -m | grep -qx sqlsrv && php -m | grep -qx pdo_sqlsrv && echo "sqlsrv + pdo_sqlsrv loaded OK"
 
 RUN sed -i "s/;date.timezone =.*/date.timezone = UTC/" /etc/php/8.4/cli/php.ini
 RUN sed -i "s/;date.timezone =.*/date.timezone = UTC/" /etc/php/8.4/fpm/php.ini
